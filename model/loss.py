@@ -355,7 +355,7 @@ class MDCSLoss(nn.Module):
         self.tau = 2
 
         self.use_cosine_loss = use_cosine_loss
-        
+
         self.additional_diversity_factor = -0.2
         out_dim = 100
         self.register_buffer("center", torch.zeros(1, out_dim))
@@ -407,7 +407,7 @@ class MDCSLoss(nn.Module):
 
         if self.use_cosine_loss:
             logits_list = extra_info['logits']
-            loss += self.cosine_div(logits_list)
+            loss += self.cosine_loss(logits_list)
 
         teacher_expert1_logits = expert1_logits[:num, :]  # view1
         student_expert1_logits = expert1_logits[num:, :]  # view2
