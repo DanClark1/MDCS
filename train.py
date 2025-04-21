@@ -51,7 +51,7 @@ def learing_rate_scheduler(optimizer, config):
     return lr_scheduler
 
 
-def main(config):
+def main(config, use_cosine):
     logger = config.get_logger('train')
 
     # setup data_loader instances
@@ -80,7 +80,7 @@ def main(config):
         criterion = config.init_obj(
             'loss', module_loss,
             cls_num_list=data_loader.cls_num_list,
-            use_cosine=config["use_cosine"]
+            use_cosine=use_cosine
         )
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
@@ -134,4 +134,4 @@ if __name__ == '__main__':
     ]
     config = ConfigParser.from_args(args, options)
     pprint.pprint(config)
-    main(config)
+    main(config, args.use_cosine)
