@@ -378,10 +378,10 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=False):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=True, use_lambda_max=False):
         super().__init__()
         self.base_loss = F.cross_entropy
-        self.cosine_loss = CosineDiversityLoss(weight=0.1)
+        self.cosine_loss = CosineDiversityLoss(weight=1.0)
         prior = np.array(cls_num_list) #/ np.sum(cls_num_list)
 
         self.prior = torch.tensor(prior).float().cuda()
