@@ -134,4 +134,6 @@ if __name__ == '__main__':
     ]
     config = ConfigParser.from_args(args, options)
     pprint.pprint(config)
-    main(config, args.use_cosine)
+    if not args.use_cosine:
+        cosine= False
+    main(config, cosine)
