@@ -79,7 +79,8 @@ def main(config):
     else:
         criterion = config.init_obj(
             'loss', module_loss,
-            cls_num_list=data_loader.cls_num_list
+            cls_num_list=data_loader.cls_num_list,
+            use_cosine=config.use_cosine
         )
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
