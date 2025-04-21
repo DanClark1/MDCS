@@ -30,6 +30,7 @@ class CosineDiversityLoss(nn.Module):
         if M < 2 or self.weight == 0:
             return logits_list[0].new_tensor(0.)
 
+        print(x.shape)
         # 1) stack into (M, N, C)
         x = torch.stack(logits_list, dim=0)
 
