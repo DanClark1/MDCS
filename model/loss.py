@@ -49,7 +49,7 @@ class CosineDiversityLoss(nn.Module):
         # 6) mean over all pairs
         loss = pair_sims.mean()
 
-        wandb.log({"cosine_diversity_loss", loss.item()}, commit=False)
+        wandb.log({"cosine_diversity_loss": loss.item()}, commit=False)
 
         return self.weight * loss
 
