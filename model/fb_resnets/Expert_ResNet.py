@@ -143,6 +143,7 @@ class ResNet(nn.Module):
         self.layer4s = nn.ModuleList([self._make_layer(block, layer4_output_dim, layers[3], stride=2) for _ in range(num_experts)])
         self.inplanes = self.next_inplanes
         self.avgpool = nn.AvgPool2d(7, stride=1)
+        self.projection_matrix = nn.Parameter(torch.randn(layer4_output_dim, num_experts * (layer4_output_dim//num_experts)))
         
         self.use_dropout = True if dropout else False
 
@@ -233,6 +234,8 @@ class ResNet(nn.Module):
                 outs.append(self._separate_part(x, ind))
 
             final_out = torch.stack(outs, dim=1).mean(dim=1)
+
+            final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
         
         if self.returns_feat:
             return {
@@ -242,3 +245,37 @@ class ResNet(nn.Module):
             }
         else:
             return final_out
+
+
+
+def project_to_unique_subspaces(
+    U: torch.Tensor,
+    A: torch.Tensor
+) -> torch.Tensor:
+    """
+    Args:
+      U: (batch, K, dim)                — MoE outputs
+      A: (dim, dim)                     — unconstrained parameter
+    Returns:
+      V: (batch, K, dim)                — each expert in its own orthogonal subspace
+    """
+    batch, K, dim = U.shape
+    assert dim % K == 0
+    dsub = dim // K
+
+    # 1) build Cayley orthogonal matrix
+    S = A - A.t()                                # skew-symmetric
+    I = torch.eye(dim, device=A.device, dtype=A.dtype)
+    # solve (I - S) X = (I + S)
+    Q = torch.linalg.solve(I - S, I + S)         # (dim, dim), orthogonal
+
+    # 2) slice into K sub-bases
+    #    Q[:, i*dsub:(i+1)*dsub] is the basis for expert i
+    V = torch.zeros_like(U)
+    for i in range(K):
+        Bi = Q[:, i*dsub:(i+1)*dsub]             # (dim, dsub)
+        ui = U[:, i]                             # (batch, dim)
+        coords = ui @ Bi                         # (batch, dsub)
+        V[:, i]  = coords @ Bi.t()               # back to (batch, dim)
+
+    return V
