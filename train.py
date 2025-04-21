@@ -133,5 +133,5 @@ if __name__ == '__main__':
     pprint.pprint(config)
 
 
-    use_cosine = config['use_cosine']
+    use_cosine = config.args.use_cosine
     main(config, use_cosine)
