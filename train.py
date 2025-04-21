@@ -109,7 +109,8 @@ if __name__ == '__main__':
     args.add_argument(
     '--use_cosine',
     action='store_true',
-    help='if set, train with the cosine‐based loss'
+    help='if set, train with the cosine‐based loss',
+    default=False
 )
     
     # custom cli options to modify configuration from default values given in json file.
