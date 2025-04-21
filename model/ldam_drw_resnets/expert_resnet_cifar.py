@@ -96,12 +96,12 @@ class BasicBlock(nn.Module):
 
 class ResNet_s(nn.Module):
 
-    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30):
+    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=True):
         super(ResNet_s, self).__init__()
         
         self.in_planes = 16
         self.num_experts = num_experts
-
+        self.project=True
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
@@ -123,7 +123,8 @@ class ResNet_s(nn.Module):
         self.in_planes = self.next_in_planes
         self.layer3s = nn.ModuleList([self._make_layer(block, layer3_output_dim, num_blocks[2], stride=2) for _ in range(num_experts)])
         self.in_planes = self.next_in_planes
-        
+        self.projection_matrix = nn.Parameter(torch.randn(layer3_output_dim, num_experts * (layer3_output_dim//num_experts)))
+
         if use_norm:
             self.linears = nn.ModuleList([NormedLinear(layer3_output_dim, num_classes) for _ in range(num_experts)])
             self.linear_head =  NormedLinear(layer3_output_dim, num_classes)  
@@ -204,6 +205,9 @@ class ResNet_s(nn.Module):
         self.feat = torch.stack(self.feat, dim=1)
         self.feat_before_GAP = torch.stack(self.feat_before_GAP, dim=1)
         final_out = torch.stack(outs, dim=1).mean(dim=1)
+
+        final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
+
         if self.returns_feat:
             return {
                 "output": final_out, 
@@ -247,9 +251,44 @@ def test(net):
     print("Total layers", len(list(filter(lambda p: p.requires_grad and len(p.data.size())>1, net.parameters()))))
 
 
+def project_to_unique_subspaces(
+    U: torch.Tensor,
+    A: torch.Tensor
+) -> torch.Tensor:
+    """
+    Args:
+      U: (batch, K, dim)                — MoE outputs
+      A: (dim, dim)                     — unconstrained parameter
+    Returns:
+      V: (batch, K, dim)                — each expert in its own orthogonal subspace
+    """
+    batch, K, dim = U.shape
+    assert dim % K == 0
+    dsub = dim // K
+
+    # 1) build Cayley orthogonal matrix
+    S = A - A.t()                                # skew-symmetric
+    I = torch.eye(dim, device=A.device, dtype=A.dtype)
+    # solve (I - S) X = (I + S)
+    Q = torch.linalg.solve(I - S, I + S)         # (dim, dim), orthogonal
+
+    # 2) slice into K sub-bases
+    #    Q[:, i*dsub:(i+1)*dsub] is the basis for expert i
+    V = torch.zeros_like(U)
+    for i in range(K):
+        Bi = Q[:, i*dsub:(i+1)*dsub]             # (dim, dsub)
+        ui = U[:, i]                             # (batch, dim)
+        coords = ui @ Bi                         # (batch, dsub)
+        V[:, i]  = coords @ Bi.t()               # back to (batch, dim)
+
+    return V
+
+
+
 if __name__ == "__main__":
     for net_name in __all__:
         if net_name.startswith('resnet'):
             print(net_name)
             test(globals()[net_name]())
             print()
+

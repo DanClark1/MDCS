@@ -107,7 +107,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_experts, dropout=None, num_classes=1000, use_norm=False, reduce_dimension=False, layer3_output_dim=None, layer4_output_dim=None, share_layer3=False, returns_feat=False, s=30, project=True):
+    def __init__(self, block, layers, num_experts, dropout=None, num_classes=1000, use_norm=False, reduce_dimension=False, layer3_output_dim=None, layer4_output_dim=None, share_layer3=False, returns_feat=False, s=30):
         self.inplanes = 64
         self.num_experts = num_experts
         super(ResNet, self).__init__()
@@ -121,8 +121,6 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.inplanes = self.next_inplanes
 
-
-        self.project = project
         self.share_layer3 = share_layer3
 
         if layer3_output_dim is None:
@@ -145,7 +143,6 @@ class ResNet(nn.Module):
         self.layer4s = nn.ModuleList([self._make_layer(block, layer4_output_dim, layers[3], stride=2) for _ in range(num_experts)])
         self.inplanes = self.next_inplanes
         self.avgpool = nn.AvgPool2d(7, stride=1)
-        self.projection_matrix = nn.Parameter(torch.randn(layer4_output_dim, num_experts * (layer4_output_dim//num_experts)))
         
         self.use_dropout = True if dropout else False
 
@@ -237,8 +234,6 @@ class ResNet(nn.Module):
                 outs.append(self._separate_part(x, ind))
             final_out = torch.stack(outs, dim=1).mean(dim=1)
 
-            if self.project:
-                final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
             
         
         if self.returns_feat:
