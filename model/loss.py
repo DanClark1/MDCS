@@ -14,6 +14,39 @@ def focal_loss(input_values, gamma):
     loss = (1 - p) ** gamma * input_values
     return loss.mean()
 
+
+def calculate_lambda_max_loss(self, x):   
+    # (batch_positions, d, n)  
+
+
+    if torch.isnan(x).any():
+        raise ValueError(f"NaNs detected in clients_tensor before normalization.")
+
+    x = F.normalize(x, p=2, dim=-1)
+
+
+    if torch.isnan(x).any():
+        raise ValueError(f"NaNs detected in clients_tensor after normalization.")
+
+    A = x.permute(1, 2, 0).contiguous()   
+    eps = 1e-6
+
+    Q, R = torch.linalg.qr(A, mode="reduced")
+
+        
+    r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
+    k      = (r_diag > eps).sum(dim=1)                    # (E,)
+    cols   = torch.arange(Q.size(-1), device=Q.device)    # (d,)
+    mask   = cols[None, None, :] < k[:, None, None]       # (E, 1, d)
+    Qm     = Q * mask                                     
+    projs  = Qm @ Qm.transpose(-2, -1) 
+    avg_proj    = projs.mean(dim=0) 
+
+    eigvals = torch.linalg.eigvalsh(avg_proj)
+    lambda_max = eigvals[-1]
+
+    return lambda_max
+
 class CosineDiversityLoss(nn.Module):
     """
     Penalize experts whose outputs are too similar:
@@ -345,7 +378,7 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=True):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=True):
         super().__init__()
         self.base_loss = F.cross_entropy
         self.cosine_loss = CosineDiversityLoss(weight=0.1)
@@ -357,6 +390,7 @@ class MDCSLoss(nn.Module):
         self.tau = 2
 
         self.use_cosine_loss = use_cosine_loss
+        self.use_lambda_max = use_lambda_max
 
         self.additional_diversity_factor = -0.2
         out_dim = 100
@@ -410,6 +444,9 @@ class MDCSLoss(nn.Module):
         if self.use_cosine_loss:
             logits_list = extra_info['logits']
             loss += self.cosine_loss(logits_list)
+        if self.use_lambda_max:
+            lambda_max = calculate_lambda_max_loss(logits_list)
+            loss += lambda_max * 0.1
 
         teacher_expert1_logits = expert1_logits[:num, :]  # view1
         student_expert1_logits = expert1_logits[num:, :]  # view2
