@@ -108,11 +108,11 @@ if __name__ == '__main__':
     args.add_argument('-d', '--device', default=None, type=str,
                       help='indices of GPUs to enable (default: all)')
     args.add_argument(
-    '--use_cosine',
-    action='store_true',
-    help='if set, train with the cosine‐based loss',
-    default=False
-)
+        '--use_cosine',
+        action='store_true',
+        help='if set, train with the cosine‐based loss',
+        default=False
+    )
     
     # custom cli options to modify configuration from default values given in json file.
     CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
@@ -134,6 +134,6 @@ if __name__ == '__main__':
     ]
     config = ConfigParser.from_args(args, options)
     pprint.pprint(config)
-    if not args.use_cosine:
-        cosine= False
-    main(config, cosine)
+
+    use_cosine = config['use_cosine']
+    main(config, use_cosine)
