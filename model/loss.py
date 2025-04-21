@@ -14,6 +14,44 @@ def focal_loss(input_values, gamma):
     loss = (1 - p) ** gamma * input_values
     return loss.mean()
 
+class CosineDiversityLoss(nn.Module):
+    """
+    Penalize experts whose outputs are too similar:
+    loss = mean_{i<j} [ cosine_similarity(logits_i, logits_j) ]
+    """
+    def __init__(self, weight: float = 1.0, eps: float = 1e-8):
+        super().__init__()
+        self.weight = weight
+        self.eps = eps
+
+    def forward(self, logits_list):
+        # logits_list: list of (N, C) tensors from each expert
+        M = len(logits_list)
+        if M < 2 or self.weight == 0:
+            return logits_list[0].new_tensor(0.)
+
+        # 1) stack into (M, N, C)
+        x = torch.stack(logits_list, dim=0)
+
+        # 2) normalize along the class-dimension
+        x = F.normalize(x, p=2, dim=2, eps=self.eps)  # still (M, N, C)
+
+        # 3) compute pairwise cosine-sims per sample: (M, M, N)
+        sims = torch.einsum('mnc,knc->mnk', x, x)
+
+        # 4) average over the batch‐dimension N → (M, M)
+        sims = sims.mean(dim=2)
+
+        # 5) take only the upper‐triangle entries i<j
+        idx_i, idx_j = torch.triu_indices(M, M, offset=1, device=sims.device)
+        pair_sims = sims[idx_i, idx_j]  # shape = (M*(M-1)/2,)
+
+        # 6) mean over all pairs
+        loss = pair_sims.mean()
+
+        return self.weight * loss
+
+
 
 class FocalLoss(nn.Module):
     def __init__(self, cls_num_list=None, weight=None, gamma=0.):
@@ -305,10 +343,10 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=True):
         super().__init__()
         self.base_loss = F.cross_entropy
-
+        self.cosine_loss = CosineDiversityLoss(weight=0.1)
         prior = np.array(cls_num_list) #/ np.sum(cls_num_list)
 
         self.prior = torch.tensor(prior).float().cuda()
@@ -316,6 +354,8 @@ class MDCSLoss(nn.Module):
         self.s = s
         self.tau = 2
 
+        self.use_cosine_loss = use_cosine_loss
+        
         self.additional_diversity_factor = -0.2
         out_dim = 100
         self.register_buffer("center", torch.zeros(1, out_dim))
@@ -365,6 +405,9 @@ class MDCSLoss(nn.Module):
         expert3_logits = extra_info['logits'][2] + torch.log(torch.pow(self.prior, 2.5) + 1e-9)       #few
 
 
+        if self.use_cosine_loss:
+            logits_list = extra_info['logits']
+            loss += self.cosine_div(logits_list)
 
         teacher_expert1_logits = expert1_logits[:num, :]  # view1
         student_expert1_logits = expert1_logits[num:, :]  # view2

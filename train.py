@@ -9,8 +9,10 @@ import model.metric as module_metric
 import model.model as module_arch
 from parse_config import ConfigParser
 from trainer import Trainer
+import wandb
 
-deterministic = False
+
+deterministic = True
 if deterministic:
     # fix random seeds for reproducibility
     SEED = 123
@@ -69,7 +71,7 @@ def main(config):
     # get function handles of loss and metrics
     loss_class = getattr(module_loss, config["loss"]["type"])
     if hasattr(loss_class, "require_num_experts") and loss_class.require_num_experts:
-        criterion = config.init_obj('loss', module_loss, cls_num_list=data_loader.cls_num_list, num_experts=config["arch"]["args"]["num_experts"])
+        criterion = config.init_obj('loss', module_loss, cls_num_list=data_loader.cls_num_list, num_experts=config["arch"]["args"]["num_experts"], use_cosine_loss=args.cosine)
     else:
         criterion = config.init_obj('loss', module_loss, cls_num_list=data_loader.cls_num_list)
     metrics = [getattr(module_metric, met) for met in config['metrics']]
@@ -88,6 +90,8 @@ def main(config):
 
 
 if __name__ == '__main__':
+
+    wandb.init('MDCS')
     args = argparse.ArgumentParser(description='PyTorch Template')
     args.add_argument('-c', '--config', default=None, type=str,
                       help='config file path (default: None)')
@@ -95,6 +99,7 @@ if __name__ == '__main__':
                       help='path to latest checkpoint (default: None)')
     args.add_argument('-d', '--device', default=None, type=str,
                       help='indices of GPUs to enable (default: all)')
+    args.add_argument('-cosine', default=False, type=bool,)
 
     # custom cli options to modify configuration from default values given in json file.
     CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
