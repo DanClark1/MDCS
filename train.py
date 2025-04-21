@@ -135,5 +135,7 @@ if __name__ == '__main__':
     config = ConfigParser.from_args(args, options)
     pprint.pprint(config)
 
-    use_cosine = config['use_cosine']
+    parsed_args = args.parse_args()
+    config = ConfigParser.from_args(parsed_args, options)
+    use_cosine = parsed_args.use_cosine
     main(config, use_cosine)
