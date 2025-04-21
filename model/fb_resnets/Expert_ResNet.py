@@ -219,6 +219,7 @@ class ResNet(nn.Module):
         return x
 
     def forward(self, x):
+        print('hello')
         with autocast():
             x = self.conv1(x)
             x = self.bn1(x)
@@ -234,11 +235,11 @@ class ResNet(nn.Module):
             self.feat = []
             for ind in range(self.num_experts):
                 outs.append(self._separate_part(x, ind))
+            final_out = torch.stack(outs, dim=1).mean(dim=1)
 
             if self.project:
-                final_out = torch.stack(outs, dim=1).mean(dim=1)
-
-            final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
+                final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
+            
         
         if self.returns_feat:
             return {
@@ -280,5 +281,5 @@ def project_to_unique_subspaces(
         ui = U[:, i]                             # (batch, dim)
         coords = ui @ Bi                         # (batch, dsub)
         V[:, i]  = coords @ Bi.t()               # back to (batch, dim)
-    print(V)
+
     return V
