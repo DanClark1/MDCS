@@ -102,6 +102,8 @@ class ResNet_s(nn.Module):
         self.in_planes = 16
         self.num_experts = num_experts
         self.project=True
+        if self.project:
+            print("Projecting to unique subspaces")
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
