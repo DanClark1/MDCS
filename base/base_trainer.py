@@ -4,6 +4,7 @@ from abc import abstractmethod
 from numpy import inf
 from logger import TensorboardWriter
 from utils import load_state_dict, rename_parallel_state_dict
+import wandb
 
 class BaseTrainer:
     """
@@ -83,6 +84,7 @@ class BaseTrainer:
 
             # print logged informations to the screen
             for key, value in log.items():
+                wandb.log({str(key): value}, step=epoch)
                 self.logger.info('    {:15s}: {}'.format(str(key), value))
 
             # evaluate model performance according to configured metric, save best checkpoint as model_best
