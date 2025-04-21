@@ -129,7 +129,6 @@ if __name__ == '__main__':
         CustomArgs(['--layer3_dimension'], type=int, target='arch;args;layer3_output_dim'),
         CustomArgs(['--layer4_dimension'], type=int, target='arch;args;layer4_output_dim'),
         CustomArgs(['--num_experts'], type=int, target='arch;args;num_experts'),
-        CustomArgs(['--use_cosine'], type=bool, target='loss;args;use_cosine_loss'),
     ]
     config = ConfigParser.from_args(args, options)
     pprint.pprint(config)
