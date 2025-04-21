@@ -22,7 +22,7 @@ def calculate_lambda_max_loss(x):
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
 
-    x = F.normalize(x, p=2, dim=-1)
+    x = F.normalize(x, p=2, dim=-1).to('cuda')
 
 
     if torch.isnan(x).any():
