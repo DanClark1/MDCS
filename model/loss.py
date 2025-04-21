@@ -47,7 +47,7 @@ class CosineDiversityLoss(nn.Module):
         pair_sims = sims[idx_i, idx_j]  # shape = (M*(M-1)/2,)
 
         # 6) mean over all pairs
-        loss = pair_sims.mean()
+        loss = torch.abs(pair_sims.mean())
 
         wandb.log({"cosine_diversity_loss": loss.item()}, commit=False)
 
