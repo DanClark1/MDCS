@@ -15,7 +15,7 @@ def focal_loss(input_values, gamma):
     return loss.mean()
 
 
-def calculate_lambda_max_loss(self, x):   
+def calculate_lambda_max_loss(x):   
     # (batch_positions, d, n)  
 
 
