@@ -280,5 +280,5 @@ def project_to_unique_subspaces(
         ui = U[:, i]                             # (batch, dim)
         coords = ui @ Bi                         # (batch, dsub)
         V[:, i]  = coords @ Bi.t()               # back to (batch, dim)
-
+    print(V)
     return V
