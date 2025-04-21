@@ -71,9 +71,16 @@ def main(config):
     # get function handles of loss and metrics
     loss_class = getattr(module_loss, config["loss"]["type"])
     if hasattr(loss_class, "require_num_experts") and loss_class.require_num_experts:
-        criterion = config.init_obj('loss', module_loss, cls_num_list=data_loader.cls_num_list, num_experts=config["arch"]["args"]["num_experts"], use_cosine_loss=args.cosine)
+        criterion = config.init_obj(
+            'loss', module_loss,
+            cls_num_list=data_loader.cls_num_list,
+            num_experts=config["arch"]["args"]["num_experts"]
+        )
     else:
-        criterion = config.init_obj('loss', module_loss, cls_num_list=data_loader.cls_num_list)
+        criterion = config.init_obj(
+            'loss', module_loss,
+            cls_num_list=data_loader.cls_num_list
+        )
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
     # build optimizer, learning rate scheduler.  
@@ -104,7 +111,6 @@ if __name__ == '__main__':
     CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
     options = [
         CustomArgs(['--lr', '--learning_rate'], type=float, target='optimizer;args;lr'),
-        CustomArgs(['--cosine'], type=bool),
         CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size'),
         CustomArgs(['--name'], type=str, target='name'),
         CustomArgs(['--epochs'], type=int, target='trainer;epochs'),
@@ -117,7 +123,8 @@ if __name__ == '__main__':
         CustomArgs(['--layer2_dimension'], type=int, target='arch;args;layer2_output_dim'),
         CustomArgs(['--layer3_dimension'], type=int, target='arch;args;layer3_output_dim'),
         CustomArgs(['--layer4_dimension'], type=int, target='arch;args;layer4_output_dim'),
-        CustomArgs(['--num_experts'], type=int, target='arch;args;num_experts') 
+        CustomArgs(['--num_experts'], type=int, target='arch;args;num_experts'),
+        CustomArgs(['--use_cosine'], type=bool, target='loss;args;use_cosine_loss'),
     ]
     config = ConfigParser.from_args(args, options)
     pprint.pprint(config)
