@@ -7,7 +7,7 @@ import pdb
 eps = 1e-7
 import torch.distributed as dist
 
-
+import wandb
 def focal_loss(input_values, gamma):
     """Computes the focal loss"""
     p = torch.exp(-input_values)
@@ -48,6 +48,8 @@ class CosineDiversityLoss(nn.Module):
 
         # 6) mean over all pairs
         loss = pair_sims.mean()
+
+        wandb.log({"cosine_diversity_loss", loss.item()}, commit=False)
 
         return self.weight * loss
 
@@ -346,7 +348,7 @@ class MDCSLoss(nn.Module):
     def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=True):
         super().__init__()
         self.base_loss = F.cross_entropy
-        self.cosine_loss = CosineDiversityLoss(weight=0.1)
+        self.cosine_loss = CosineDiversityLoss(weight=10)
         prior = np.array(cls_num_list) #/ np.sum(cls_num_list)
 
         self.prior = torch.tensor(prior).float().cuda()
