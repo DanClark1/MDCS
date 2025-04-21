@@ -345,7 +345,7 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=True):
         super().__init__()
         self.base_loss = F.cross_entropy
         self.cosine_loss = CosineDiversityLoss(weight=10)
