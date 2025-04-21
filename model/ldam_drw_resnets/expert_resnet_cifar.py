@@ -267,6 +267,7 @@ def project_to_unique_subspaces(
       V: (batch, K, dim)                — each expert in its own orthogonal subspace
     """
     batch, K, dim = U.shape
+    print(f'batch: {batch}, K: {K}, dim: {dim}')
     dsub = dim // K
 
     # 1) build Cayley orthogonal matrix
