@@ -96,12 +96,13 @@ class BasicBlock(nn.Module):
 
 class ResNet_s(nn.Module):
 
-    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=True):
+    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=False, orthonormalise=False):
         super(ResNet_s, self).__init__()
         
         self.in_planes = 16
         self.num_experts = num_experts
-        self.project=True
+        self.project=project
+        self.orthonormalise = orthonormalise
         if self.project:
             print("Projecting to unique subspaces")
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -209,6 +210,8 @@ class ResNet_s(nn.Module):
         final_out = torch.stack(outs, dim=1)
         if self.project:
             final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
+        elif self.orthonormalise:
+            final_out = gram_schmidt_orthonormalise(final_out)
         final_out = final_out.mean(dim=1)
         
 
@@ -295,3 +298,32 @@ if __name__ == "__main__":
             test(globals()[net_name]())
             print()
 
+
+
+def gram_schmidt_orthonormalise(U: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """
+    Differentiable Gram–Schmidt on U of shape (batch, K, dim).
+    Avoids in-place ops by cloning and stacking.
+    """
+    batch, K, dim = U.shape
+    orthonorms = []
+
+    for i in range(K):
+        # clone the slice so we don't modify a view of U
+        v = U[:, i].clone()              # (batch, dim)
+
+        # subtract projections onto all previous orthonormal vectors
+        for vj in orthonorms:            # each vj is (batch, dim)
+            # ⟨v, vj⟩ / (⟨vj, vj⟩ + eps), shape (batch,1)
+            coeff = (v * vj).sum(dim=1, keepdim=True) \
+                  / (vj.pow(2).sum(dim=1, keepdim=True) + eps)
+            v = v - coeff * vj           # safe: v is a fresh Tensor
+
+        # normalize to unit length
+        norm = v.norm(dim=1, keepdim=True).clamp_min(eps)
+        v = v / norm
+
+        orthonorms.append(v)
+
+    # stack back into (batch, K, dim)
+    return torch.stack(orthonorms, dim=1)
