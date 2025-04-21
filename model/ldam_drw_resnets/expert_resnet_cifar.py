@@ -205,8 +205,8 @@ class ResNet_s(nn.Module):
         self.feat = torch.stack(self.feat, dim=1)
         self.feat_before_GAP = torch.stack(self.feat_before_GAP, dim=1)
         final_out = torch.stack(outs, dim=1).mean(dim=1)
-
-        final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
+        if self.project:
+            final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
 
         if self.returns_feat:
             return {
