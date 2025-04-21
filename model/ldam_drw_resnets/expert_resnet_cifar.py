@@ -125,7 +125,7 @@ class ResNet_s(nn.Module):
         self.in_planes = self.next_in_planes
         self.layer3s = nn.ModuleList([self._make_layer(block, layer3_output_dim, num_blocks[2], stride=2) for _ in range(num_experts)])
         self.in_planes = self.next_in_planes
-        self.projection_matrix = nn.Parameter(torch.randn(layer3_output_dim, num_experts * (layer3_output_dim//num_experts)))
+        self.projection_matrix = nn.Parameter(torch.randn(100, num_experts * (100//num_experts)))
 
         if use_norm:
             self.linears = nn.ModuleList([NormedLinear(layer3_output_dim, num_classes) for _ in range(num_experts)])
@@ -267,24 +267,23 @@ def project_to_unique_subspaces(
       V: (batch, K, dim)                — each expert in its own orthogonal subspace
     """
     batch, K, dim = U.shape
-    print(f'batch: {batch}, K: {K}, dim: {dim}')
-    dsub = dim // K
+    base, rem = divmod(dim, K)      # e.g. for dim=100, K=6 → base=16, rem=4
+    # first `rem` experts get (base+1) dims, the rest get base dims
+    sizes = [(base + 1) if i < rem else base for i in range(K)]
+    starts = [0] + list(torch.cumsum(torch.tensor(sizes), 0).tolist())
 
-    # 1) build Cayley orthogonal matrix
-    S = A - A.t()                                # skew-symmetric
+    # build Cayley Q as before
+    S = A - A.t()
     I = torch.eye(dim, device=A.device, dtype=A.dtype)
-    # solve (I - S) X = (I + S)
-    Q = torch.linalg.solve(I - S, I + S)         # (dim, dim), orthogonal
+    Q = torch.linalg.solve(I - S, I + S)  # (dim, dim)
 
-    # 2) slice into K sub-bases
-    #    Q[:, i*dsub:(i+1)*dsub] is the basis for expert i
     V = torch.zeros_like(U)
     for i in range(K):
-        Bi = Q[:, i*dsub:(i+1)*dsub]             # (dim, dsub)
-        ui = U[:, i]                             # (batch, dim)
-        coords = ui @ Bi                         # (batch, dsub)
-        V[:, i]  = coords @ Bi.t()               # back to (batch, dim)
-
+        s, e = starts[i], starts[i+1]
+        Bi = Q[:, s:e]           # shape (dim, sizes[i])
+        ui = U[:, i]             # shape (batch, dim)
+        coords = ui @ Bi         # → (batch, sizes[i])
+        V[:, i] = coords @ Bi.t()# → (batch, dim)
     return V
 
 
