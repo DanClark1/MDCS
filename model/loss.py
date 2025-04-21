@@ -30,12 +30,11 @@ class CosineDiversityLoss(nn.Module):
         if M < 2 or self.weight == 0:
             return logits_list[0].new_tensor(0.)
 
-        print(logits_list.shape)
         # 1) stack into (M, N, C)
-        x = torch.stack(logits_list, dim=0)
+        # x = torch.stack(logits_list, dim=0)
 
         # 2) normalize along the class-dimension
-        x = F.normalize(x, p=2, dim=2, eps=self.eps)  # still (M, N, C)
+        x = F.normalize(logits_list, p=2, dim=2, eps=self.eps)  # still (M, N, C)
 
         # 3) compute pairwise cosine-sims per sample: (M, M, N)
         sims = torch.einsum('mnc,knc->mnk', x, x)
