@@ -19,6 +19,7 @@ def calculate_lambda_max_loss(x):
     # (batch_positions, d, n)  
     import time
     print('start')
+    print(x, x.shape)
     start_time = time.time()
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
