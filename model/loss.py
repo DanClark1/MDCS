@@ -661,15 +661,16 @@ class MDCSLoss(nn.Module):
 
 
 
-        # expert 1
-        loss += self.base_loss(expert1_logits, target)
+        # # expert 1
+        # loss += self.base_loss(expert1_logits, target)
 
-        # expert 2
-        loss += self.base_loss(expert2_logits, target)
+        # # expert 2
+        # loss += self.base_loss(expert2_logits, target)
 
-        # expert 3
-        loss += self.base_loss(expert3_logits, target)
+        # # expert 3
+        # loss += self.base_loss(expert3_logits, target)
 
+        loss = self.base_loss(expert1_logits + expert2_logits + expert3_logits, target)
 
         return loss
 
