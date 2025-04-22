@@ -190,7 +190,7 @@ def calculate_lambda_max_loss(x):
     eps = 1e-6
 
     start_time = time.time()
-    Q, R = torch_qr(A, mode="reduced")
+    Q, R = torch.linalg.qr(A, mode="reduced")
     end_time = time.time()
     print('time:', end_time - start_time)
         
