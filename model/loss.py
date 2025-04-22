@@ -174,8 +174,6 @@ def torch_qr(a, mode='complete', out=None, gram='classical'):
 def calculate_lambda_max_loss(x):   
     # (batch_positions, d, n)  
     import time
-    print('start')
-    print(x, x.shape)
     
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
@@ -192,7 +190,6 @@ def calculate_lambda_max_loss(x):
     start_time = time.time()
     Q, R = torch.linalg.qr(A, mode="reduced")
     end_time = time.time()
-    print('time:', end_time - start_time)
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
     k      = (r_diag > eps).sum(dim=1)                    # (E,)
@@ -204,10 +201,6 @@ def calculate_lambda_max_loss(x):
 
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
-    print('end')
-    
-    
-
     return lambda_max.to('cuda')
 
 class CosineDiversityLoss(nn.Module):
