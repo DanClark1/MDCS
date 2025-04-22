@@ -534,7 +534,7 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=True):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=False):
         super().__init__()
         self.base_loss = F.cross_entropy
         self.cosine_loss = CosineDiversityLoss(weight=1.0)
@@ -657,7 +657,7 @@ class MDCSLoss(nn.Module):
                                          teacher_expert3_softmax[(teacher3_index == partial_target)],
                                          reduction='batchmean') * (temperature ** 2)
 
-        loss = loss + 0.6 * kl_loss * min(extra_info['epoch'] / self.warmup, 1.0)
+        # loss = loss + 0.6 * kl_loss * min(extra_info['epoch'] / self.warmup, 1.0)
 
 
 
