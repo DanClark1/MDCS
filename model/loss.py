@@ -20,7 +20,7 @@ def calculate_lambda_max_loss(x):
     import time
     print('start')
     print(x, x.shape)
-    start_time = time.time()
+    
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
 
@@ -33,8 +33,10 @@ def calculate_lambda_max_loss(x):
     A = x.permute(1, 2, 0).contiguous()   
     eps = 1e-6
 
+    start_time = time.time()
     Q, R = torch.linalg.qr(A, mode="reduced")
-
+    end_time = time.time()
+    print('time:', end_time - start_time)
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
     k      = (r_diag > eps).sum(dim=1)                    # (E,)
@@ -47,8 +49,7 @@ def calculate_lambda_max_loss(x):
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
     print('end')
-    end_time = time.time()
-    print('time:', end_time - start_time)
+    
 
     return lambda_max
 
