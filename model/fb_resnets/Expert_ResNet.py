@@ -107,7 +107,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_experts, dropout=None, num_classes=1000, use_norm=False, reduce_dimension=False, layer3_output_dim=None, layer4_output_dim=None, share_layer3=False, returns_feat=False, s=30):
+    def __init__(self, block, layers, num_experts, dropout=None, num_classes=1000, use_norm=False, reduce_dimension=False, layer3_output_dim=None, layer4_output_dim=None, share_layer3=False, returns_feat=False, s=30, project=True):
         self.inplanes = 64
         self.num_experts = num_experts
         super(ResNet, self).__init__()
@@ -120,8 +120,10 @@ class ResNet(nn.Module):
         self.inplanes = self.next_inplanes
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.inplanes = self.next_inplanes
-
+        self.project = project
         self.share_layer3 = share_layer3
+
+        self.projection_matrix = None
 
         if layer3_output_dim is None:
             if reduce_dimension:
@@ -233,6 +235,15 @@ class ResNet(nn.Module):
             for ind in range(self.num_experts):
                 outs.append(self._separate_part(x, ind))
             final_out = torch.stack(outs, dim=1).mean(dim=1)
+
+
+            if self.project:
+
+                if self.projection_matrix is None:
+                    self.projection_matrix = torch.randn(final_out.shape[-1], final_out.shape[-1], device=x.device)
+                    
+                
+                final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
 
             
         
