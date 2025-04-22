@@ -17,8 +17,9 @@ def focal_loss(input_values, gamma):
 
 def calculate_lambda_max_loss(x):   
     # (batch_positions, d, n)  
-
+    import time
     print('start')
+    start_time = time.time()
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
 
@@ -45,6 +46,8 @@ def calculate_lambda_max_loss(x):
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
     print('end')
+    end_time = time.time()
+    print('time:', end_time - start_time)
 
     return lambda_max
 
