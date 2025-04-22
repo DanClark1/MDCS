@@ -670,7 +670,9 @@ class MDCSLoss(nn.Module):
         # # expert 3
         # loss += self.base_loss(expert3_logits, target)
 
-        loss = self.base_loss(expert1_logits + expert2_logits + expert3_logits, target)
+        out = torch.stack([expert1_logits, expert2_logits, expert3_logits], dim=0).mean(dim=0)
+
+        loss = self.base_loss(out, target)
 
         return loss
 
