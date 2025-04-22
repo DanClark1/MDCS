@@ -603,7 +603,7 @@ class MDCSLoss(nn.Module):
         if self.use_lambda_max:
             logits_list = extra_info['logits']
             lambda_max = calculate_lambda_max_loss(logits_list)
-            loss += lambda_max * 0.1
+            loss += lambda_max * 1.0
 
         teacher_expert1_logits = expert1_logits[:num, :]  # view1
         student_expert1_logits = expert1_logits[num:, :]  # view2
