@@ -534,7 +534,7 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=False):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=True):
         super().__init__()
         self.base_loss = F.cross_entropy
         self.cosine_loss = CosineDiversityLoss(weight=1.0)
@@ -661,18 +661,16 @@ class MDCSLoss(nn.Module):
 
 
 
-        # # expert 1
-        # loss += self.base_loss(expert1_logits, target)
+        # expert 1
+        loss += self.base_loss(expert1_logits, target)
 
-        # # expert 2
-        # loss += self.base_loss(expert2_logits, target)
+        # expert 2
+        loss += self.base_loss(expert2_logits, target)
 
-        # # expert 3
-        # loss += self.base_loss(expert3_logits, target)
+        # expert 3
+        loss += self.base_loss(expert3_logits, target)
 
-        out = torch.stack([expert1_logits, expert2_logits, expert3_logits], dim=0).mean(dim=0)
 
-        loss = self.base_loss(out, target)
 
         return loss
 
