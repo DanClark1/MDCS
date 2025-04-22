@@ -18,7 +18,7 @@ def focal_loss(input_values, gamma):
 def calculate_lambda_max_loss(x):   
     # (batch_positions, d, n)  
 
-
+    print('start')
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
 
@@ -44,6 +44,7 @@ def calculate_lambda_max_loss(x):
 
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
+    print('end')
 
     return lambda_max
 
