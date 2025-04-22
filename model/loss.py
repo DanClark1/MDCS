@@ -180,7 +180,7 @@ def calculate_lambda_max_loss(x):
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
 
-    x = F.normalize(x, p=2, dim=-1).to('cuda')
+    x = F.normalize(x, p=2, dim=-1).to('cpu')
 
 
     if torch.isnan(x).any():
@@ -206,8 +206,9 @@ def calculate_lambda_max_loss(x):
     lambda_max = eigvals[-1]
     print('end')
     
+    
 
-    return lambda_max
+    return lambda_max.to('cuda')
 
 class CosineDiversityLoss(nn.Module):
     """
