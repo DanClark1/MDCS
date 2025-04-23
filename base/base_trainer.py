@@ -49,8 +49,9 @@ class BaseTrainer:
         import os
 
         import datetime
-        str_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.checkpoint_dir = os.path.join(config.save_dir, str_datetime)
+        self.str_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.checkpoint_dir = config.save_dir / self.str_datetime
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         # setup visualization writer instance                
         self.writer = TensorboardWriter(config.log_dir, self.logger, cfg_trainer['tensorboard'])
@@ -162,6 +163,7 @@ class BaseTrainer:
             self.logger.info("Saving checkpoint: {} ...".format(filename))
         if save_best:
             best_path = str(self.checkpoint_dir / 'model_best.pth')
+
             torch.save(state, best_path)
             self.logger.info("Saving current best: {} ...".format(best_path))
 
