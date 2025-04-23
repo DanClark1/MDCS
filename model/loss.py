@@ -534,7 +534,7 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=False):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=True, use_lambda_max=False):
         super().__init__()
         self.base_loss = F.cross_entropy
         self.cosine_loss = CosineDiversityLoss(weight=1.0)
@@ -597,13 +597,7 @@ class MDCSLoss(nn.Module):
         expert3_logits = extra_info['logits'][2] + torch.log(torch.pow(self.prior, 2.5) + 1e-9)       #few
 
 
-        if self.use_cosine_loss:
-            logits_list = extra_info['logits']
-            loss += self.cosine_loss(logits_list)
-        if self.use_lambda_max:
-            logits_list = extra_info['logits']
-            lambda_max = calculate_lambda_max_loss(logits_list)
-            loss += lambda_max * 10.0
+        
 
         teacher_expert1_logits = expert1_logits[:num, :]  # view1
         student_expert1_logits = expert1_logits[num:, :]  # view2
@@ -673,6 +667,14 @@ class MDCSLoss(nn.Module):
 
         loss = self.base_loss(output_logits, target) 
 
+
+        if self.use_cosine_loss:
+            logits_list = extra_info['logits']
+            loss += self.cosine_loss(logits_list)
+        if self.use_lambda_max:
+            logits_list = extra_info['logits']
+            lambda_max = calculate_lambda_max_loss(logits_list)
+            loss += lambda_max * 10.0
 
         return loss
 
