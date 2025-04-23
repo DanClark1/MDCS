@@ -316,6 +316,7 @@ def project_to_unique_subspaces(
     # build Cayley Q as before
     S = A - A.t()
     I = torch.eye(dim, device=A.device, dtype=A.dtype)
+    print(I.shape, S.shape)
     Q = torch.linalg.solve(I - S, I + S)  # (dim, dim)
 
     V = torch.zeros_like(U)
