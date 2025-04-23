@@ -657,19 +657,21 @@ class MDCSLoss(nn.Module):
                                          teacher_expert3_softmax[(teacher3_index == partial_target)],
                                          reduction='batchmean') * (temperature ** 2)
 
-        # loss = loss + 0.6 * kl_loss * min(extra_info['epoch'] / self.warmup, 1.0)
+        #loss = loss + 0.6 * kl_loss * min(extra_info['epoch'] / self.warmup, 1.0)
 
 
 
-        # expert 1
-        loss += self.base_loss(expert1_logits, target)
+        # # expert 1
+        # loss += self.base_loss(expert1_logits, target)
 
-        # expert 2
-        loss += self.base_loss(expert2_logits, target)
+        # # expert 2
+        # loss += self.base_loss(expert2_logits, target)
 
-        # expert 3
-        loss += self.base_loss(expert3_logits, target)
+        # # expert 3
+        # loss += self.base_loss(expert3_logits, target)
 
+
+        self.base_loss(output_logits, target) 
 
 
         return loss
