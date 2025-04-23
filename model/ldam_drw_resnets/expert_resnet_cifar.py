@@ -96,7 +96,7 @@ class BasicBlock(nn.Module):
 
 class ResNet_s(nn.Module):
 
-    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=False, orthonormalise=False):
+    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=True, orthonormalise=False):
         super(ResNet_s, self).__init__()
         
         self.in_planes = 16
@@ -126,7 +126,7 @@ class ResNet_s(nn.Module):
         self.in_planes = self.next_in_planes
         self.layer3s = nn.ModuleList([self._make_layer(block, layer3_output_dim, num_blocks[2], stride=2) for _ in range(num_experts)])
         self.in_planes = self.next_in_planes
-        self.projection_matrix = nn.Parameter(torch.randn(100, 100))
+        self.projection_matrix = None
 
         if use_norm:
             self.linears = nn.ModuleList([NormedLinear(layer3_output_dim, num_classes) for _ in range(num_experts)])
@@ -208,10 +208,15 @@ class ResNet_s(nn.Module):
         self.feat = torch.stack(self.feat, dim=1)
         self.feat_before_GAP = torch.stack(self.feat_before_GAP, dim=1)
         final_out = torch.stack(outs, dim=1)
+
+
+
         if self.project:
-            projected_final_out = project_to_unique_subspaces(final_out[:, :-1, :], self.projection_matrix)
-            projected_final_out = torch.cat((projected_final_out, final_out[:, -1, :].unsqueeze(1)), dim=1)
-            final_out = projected_final_out
+                    projection_matrix = torch.randn(x.shape[0], x.shape[2], x.shape[2]).to('cuda')
+                    final_out = batch_project_to_unique_subspaces(
+                        final_out,
+                        projection_matrix
+                    )
         elif self.orthonormalise:
             projected_final_out = gram_schmidt_orthonormalise(final_out)
             projected_final_out[:,-1, :] = final_out[:,-1, :]
@@ -260,6 +265,35 @@ def test(net):
         total_params += np.prod(x.data.numpy().shape)
     print("Total number of params", total_params)
     print("Total layers", len(list(filter(lambda p: p.requires_grad and len(p.data.size())>1, net.parameters()))))
+
+
+def batch_project_to_unique_subspaces(
+    U: torch.Tensor,
+    A: torch.Tensor
+) -> torch.Tensor:
+    batch, K, dim = U.shape
+    # (batch, dim*dim)
+    # 2) form a skew-symmetric S(x)
+    S = A - A.transpose(-1,-2)             # (batch, dim, dim)
+    I = torch.eye(dim, device=U.device).unsqueeze(0)  # (1,dim,dim)
+
+    # 3) Cayley transform per-sample
+    #    Q(x) = (I - S)^{-1}(I + S)
+    Q = torch.linalg.solve(I - S, I + S)           # (batch, dim, dim)
+
+    # 4) slice into K disjoint blocks and project each expert
+    dsub = dim // U.shape[1]
+    V = []
+    for i in range(U.shape[1]):
+        Bi = Q[:, :, i*dsub:(i+1)*dsub]            # (batch, dim, dsub)
+        ui = U[:, i].unsqueeze(-1)                 # (batch, dim, 1)
+        coords = Bi.transpose(-1,-2) @ ui          # (batch, dsub, 1)
+        vi = Bi @ coords                           # (batch, dim, 1)
+        V.append(vi.squeeze(-1))                   # (batch, dim)
+    V = torch.stack(V, dim=1)                     # (batch, K, dim)
+    return V
+
+
 
 
 def project_to_unique_subspaces(
