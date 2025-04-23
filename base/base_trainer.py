@@ -46,6 +46,11 @@ class BaseTrainer:
 
         self.start_epoch = 1
 
+        import os
+
+        import datetime
+        str_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        config.save_dir = os.path.join(config.save_dir, str_datetime)
         self.checkpoint_dir = config.save_dir
 
         # setup visualization writer instance                
