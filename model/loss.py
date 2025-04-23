@@ -671,7 +671,7 @@ class MDCSLoss(nn.Module):
         # loss += self.base_loss(expert3_logits, target)
 
 
-        self.base_loss(output_logits, target) 
+        loss = self.base_loss(output_logits, target) 
 
 
         return loss
