@@ -50,8 +50,7 @@ class BaseTrainer:
 
         import datetime
         str_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        config.save_dir = os.path.join(config.save_dir, str_datetime)
-        self.checkpoint_dir = config.save_dir
+        self.checkpoint_dir = os.path.join(config.save_dir, str_datetime)
 
         # setup visualization writer instance                
         self.writer = TensorboardWriter(config.log_dir, self.logger, cfg_trainer['tensorboard'])
