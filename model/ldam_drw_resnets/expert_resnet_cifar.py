@@ -212,7 +212,7 @@ class ResNet_s(nn.Module):
 
 
         if self.project:
-                    projection_matrix = torch.randn(x.shape[0], x.shape[2], x.shape[2]).to('cuda')
+                    projection_matrix = torch.randn(x.shape[0], 100, 100).to('cuda')
                     final_out = batch_project_to_unique_subspaces(
                         final_out,
                         projection_matrix
