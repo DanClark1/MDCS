@@ -209,9 +209,13 @@ class ResNet_s(nn.Module):
         self.feat_before_GAP = torch.stack(self.feat_before_GAP, dim=1)
         final_out = torch.stack(outs, dim=1)
         if self.project:
-            final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
+            projected_final_out = project_to_unique_subspaces(final_out, self.projection_matrix)
+            projected_final_out[:,-1, :] = final_out[:,-1, :]
+            final_out = projected_final_out
         elif self.orthonormalise:
-            final_out = gram_schmidt_orthonormalise(final_out)
+            projected_final_out = gram_schmidt_orthonormalise(final_out)
+            projected_final_out[:,-1, :] = final_out[:,-1, :]
+            final_out = projected_final_out
         final_out = final_out.mean(dim=1)
         
 
