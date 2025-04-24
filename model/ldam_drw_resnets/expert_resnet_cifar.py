@@ -346,6 +346,8 @@ def project_to_unique_subspaces(
         )
 
     calculate_lambda_max_loss(V, batch, num_experts=K)
+
+    exit()
     return V
 
 
