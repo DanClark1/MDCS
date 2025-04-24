@@ -18,29 +18,16 @@ def focal_loss(input_values, gamma):
 
 
 def calculate_lambda_max_loss(x):   
-    # (batch_positions, d, n)  
-    import time
-    
-    if torch.isnan(x).any():
-        raise ValueError(f"NaNs detected in clients_tensor before normalization.")
+    # (batch, K, dim)
+    x = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
+    A = x.permute(1, 2, 0).contiguous()  # (d, n, batch)
 
-    clients = x               # (batch, K, dim)
-    clients = F.normalize(clients, p=2, dim=-1)  # now normalizes each dim-vector
-    clients_tensor = clients.permute(1, 2, 0)     # (K, dim, batch)
-
-    x = clients_tensor
-    if torch.isnan(x).any():
-        raise ValueError(f"NaNs detected in clients_tensor after normalization.")
-
-    A = clients_tensor.contiguous()
     eps = 1e-6
 
-    start_time = time.time()
     A = A.to('cpu') # for some reason qr is super slow on gpu
     Q, R = torch.linalg.qr(A, mode="reduced")
     R = R.to('cuda')
     Q = Q.to('cuda')
-    end_time = time.time()
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
     k      = (r_diag > eps).sum(dim=1)                    # (E,)
@@ -386,7 +373,7 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=True, use_lambda_max=True):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=True):
         super().__init__()
         self.base_loss = F.cross_entropy
         self.cosine_loss = CosineDiversityLoss(weight=1.0)
