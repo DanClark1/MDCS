@@ -212,17 +212,18 @@ class ResNet_s(nn.Module):
 
 
         if self.project:
-                    # batch, K, dim = 256, 4, 100
-                    # U = torch.randn(batch, K, dim, device="cuda")
-                    # V = project_to_unique_subspaces(U, torch.randn(dim, dim, device="cuda"))
-                    # λ = calculate_lambda_max_loss(V)
-                    # print("λₘₐₓ on perfect orthogonal split:", λ.item())
-
-                    projection_matrix = torch.randn(x.shape[0], 100, 100).to('cuda')
-                    final_out = batch_project_to_unique_subspaces(
-                        final_out,
-                        projection_matrix
-                    )
+            # batch, K, dim = 256, 4, 100
+            # U = torch.randn(batch, K, dim, device="cuda")
+            # V = project_to_unique_subspaces(U, torch.randn(dim, dim, device="cuda"))
+            # λ = calculate_lambda_max_loss(V)
+            # print("λₘₐₓ on perfect orthogonal split:", λ.item())
+            if self.projection_matrix is None:
+                self.projection_matrix = torch.zeros(x.shape[-1], x.shape[-1], device='cuda')
+                torch.nn.kaiming_uniform_(self.projection_matrix, a=torch.sqrt(5))
+            final_out = project_to_unique_subspaces(
+                final_out,
+                self.projection_matrix
+            )
         elif self.orthonormalise:
             projected_final_out = gram_schmidt_orthonormalise(final_out)
             projected_final_out[:,-1, :] = final_out[:,-1, :]
