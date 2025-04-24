@@ -345,7 +345,7 @@ def project_to_unique_subspaces(
             f"Expert {i}: empirical rank {rank} exceeds block size {dim //K}"
         )
 
-    calculate_lambda_max_loss(V, batch, num_experts=K)
+    calculate_lambda_max_loss(V, batch)
 
     exit()
     return V
