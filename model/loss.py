@@ -191,7 +191,9 @@ def calculate_lambda_max_loss(x):
     eps = 1e-6
 
     start_time = time.time()
+    A.to('cpu')
     Q, R = torch.linalg.qr(A, mode="reduced")
+    Q.to('cuda')
     end_time = time.time()
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
