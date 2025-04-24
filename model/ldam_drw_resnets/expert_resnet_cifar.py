@@ -219,7 +219,7 @@ class ResNet_s(nn.Module):
             # print("λₘₐₓ on perfect orthogonal split:", λ.item())
             if self.projection_matrix is None:
                 self.projection_matrix = torch.zeros(x.shape[-1], x.shape[-1], device='cuda')
-                torch.nn.kaiming_uniform_(self.projection_matrix, a=torch.sqrt(5))
+                torch.nn.init.kaiming_uniform_(self.projection_matrix, a=torch.sqrt(5))
             final_out = project_to_unique_subspaces(
                 final_out,
                 self.projection_matrix
