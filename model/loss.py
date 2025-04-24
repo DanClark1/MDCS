@@ -57,12 +57,13 @@ def covariance_matching_loss(expert_outputs: torch.Tensor, eps: float = 1e-6) ->
 
 def calculate_lambda_max_loss(x, batch_size, n_experts=3):   
     ''' x is shape (K, batch_size, dim) '''
+    x = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
     x = x.permute(0, 2, 1).contiguous() 
-    A = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
-    print(A.shape)
+
+    print(x.shape)
     eps = 1e-6
 
-    Q, R = torch.linalg.qr(A, mode="reduced")
+    Q, R = torch.linalg.qr(x, mode="reduced")
 
 
 
@@ -71,7 +72,7 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
     k      = (r_diag > eps).sum(dim=1)   
     
     for i, ki in enumerate(k):
-        print(A.shape)
+        print(x.shape)
         print(f"expert_{i}_empirical_rank", ki.item())
     cols   = torch.arange(Q.size(-1), device=Q.device)    # (d,)
     mask   = cols[None, None, :] < k[:, None, None]       # (E, 1, d)
@@ -83,6 +84,7 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
     lambda_max = eigvals[-1]
     assert R.shape[0] == n_experts
     assert R.shape[-1] == batch_size 
+    print(lambda_max)
     wandb.log({"lambda_max": lambda_max.item()}, commit=False)
 
     return lambda_max.to('cuda')
