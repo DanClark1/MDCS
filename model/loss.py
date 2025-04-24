@@ -57,8 +57,8 @@ def covariance_matching_loss(expert_outputs: torch.Tensor, eps: float = 1e-6) ->
 
 def calculate_lambda_max_loss(x):   
     # x is shape (dim, batch, K)
-    A = x.permute(2, 1, 0).contiguous() 
-    x = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
+    #x = x.permute(2, 1, 0).contiguous() 
+    A = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
     print(A.shape)
     eps = 1e-6
 
