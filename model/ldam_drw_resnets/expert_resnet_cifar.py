@@ -229,14 +229,14 @@ class ResNet_s(nn.Module):
             projected_final_out = gram_schmidt_orthonormalise(final_out)
             projected_final_out[:,-1, :] = final_out[:,-1, :]
             final_out = projected_final_out
-        final_out = final_out.mean(dim=1)
+        mean_final_out = final_out.mean(dim=1)
         
 
         if self.returns_feat:
             return {
-                "output": final_out, 
+                "output": mean_final_out, 
                 "feat": self.feat,
-                "logits": torch.stack(outs, dim=1)
+                "logits": final_out
             }
         else:
             return final_out
