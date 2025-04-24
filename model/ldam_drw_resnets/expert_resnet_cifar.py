@@ -345,12 +345,6 @@ def project_to_unique_subspaces(
             f"Expert {i}: empirical rank {rank} exceeds block size {dim //K}"
         )
 
-
-    # V is shape (batch, K, dim)
-    V = V.permute(1, 0, 2).contiguous()  # (K, batch, dim)
-    calculate_lambda_max_loss(V, batch)
-
-    exit()
     return V
 
 
