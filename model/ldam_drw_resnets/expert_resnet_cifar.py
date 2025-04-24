@@ -332,6 +332,7 @@ def project_to_unique_subspaces(
     for i in range(K):
         s, e = starts[i], starts[i+1]
         Bi = Q[:, s:e]           # shape (dim, sizes[i])
+        print(Bi.shape)
         ui = U[:, i]             # shape (batch, dim)
         coords = ui @ Bi         # → (batch, sizes[i])
         V[:, i] = coords @ Bi.t()# → (batch, dim)
