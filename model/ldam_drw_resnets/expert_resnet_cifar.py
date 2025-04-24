@@ -339,9 +339,11 @@ def project_to_unique_subspaces(
 
 
     for i in range(K):
-        rank = torch.linalg.matrix_rank(V[:, i].T, 1e-6)
-        print(rank)
-        assert rank <= dim // K, f"rank of {i}th expert is {rank}"
+        M = V[:, i].T             # now shape = (dim, batch)
+        rank = torch.linalg.matrix_rank(M)
+        assert rank <= dim // K, (
+            f"Expert {i}: empirical rank {rank} exceeds block size {dim //K}"
+        )
     return V
 
 
