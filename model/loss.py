@@ -69,8 +69,7 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
     k      = (r_diag > eps).sum(dim=1)   
-    assert R.shape[0] == n_experts
-    assert R.shape[-1] == batch_size 
+    
     for i, ki in enumerate(k):
         print(A.shape)
         print(f"expert_{i}_empirical_rank", ki.item())
@@ -82,7 +81,10 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
 
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
+    assert R.shape[0] == n_experts
+    assert R.shape[-1] == batch_size 
     wandb.log({"lambda_max": lambda_max.item()}, commit=False)
+
     return lambda_max.to('cuda')
 
 class CosineDiversityLoss(nn.Module):
