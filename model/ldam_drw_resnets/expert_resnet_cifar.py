@@ -319,6 +319,7 @@ def project_to_unique_subspaces(
     base, rem = divmod(dim, K)      # e.g. for dim=100, K=6 → base=16, rem=4
     # first `rem` experts get (base+1) dims, the rest get base dims
     sizes = [(base + 1) if i < rem else base for i in range(K)]
+    print('sizes, {sizes}')
     starts = [0] + list(torch.cumsum(torch.tensor(sizes), 0).tolist())
 
     # build Cayley Q as before
@@ -337,7 +338,6 @@ def project_to_unique_subspaces(
 
 
     for i in range(K):
-        print(V[:, i].shape)
         rank = torch.linalg.matrix_rank(V[:, i], 1e-6)
         print(rank)
         assert rank <= dim // K, f"rank of {i}th expert is {rank}"
