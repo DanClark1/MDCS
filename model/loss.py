@@ -32,7 +32,7 @@ def calculate_lambda_max_loss(x):
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor after normalization.")
 
-    A = x.permute(1, 2, 0).contiguous()   
+    A = clients_tensor.contiguous()
     eps = 1e-6
 
     start_time = time.time()
