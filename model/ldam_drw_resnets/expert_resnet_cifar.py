@@ -398,5 +398,4 @@ def calculate_lambda_max_loss(x):
 
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
-    wandb.log({"lambda_max": lambda_max.item()}, commit=False)
     return lambda_max.to('cuda')
