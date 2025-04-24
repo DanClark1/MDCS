@@ -28,7 +28,7 @@ def calculate_lambda_max_loss(x):
     clients = F.normalize(clients, p=2, dim=-1)  # now normalizes each dim-vector
     clients_tensor = clients.permute(1, 2, 0)     # (K, dim, batch)
 
-
+    x = clients_tensor
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor after normalization.")
 
