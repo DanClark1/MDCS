@@ -59,21 +59,12 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
     ''' x is shape (K, batch_size, dim) '''
     x = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
     x = x.permute(0, 2, 1).contiguous() 
-
-    print(x.shape)
     eps = 1e-3
 
     Q, R = torch.linalg.qr(x, mode="reduced")
-
-
-
-        
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
     k      = (r_diag > eps).sum(dim=1)   
-    
-    for i, ki in enumerate(k):
-        print(x.shape)
-        print(f"expert_{i}_empirical_rank", ki.item())
+
     cols   = torch.arange(Q.size(-1), device=Q.device)    # (d,)
     mask   = cols[None, None, :] < k[:, None, None]       # (E, 1, d)
     Qm     = Q * mask                                     
@@ -84,7 +75,6 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
     lambda_max = eigvals[-1]
     assert R.shape[0] == n_experts
     assert R.shape[-1] == batch_size 
-    print(lambda_max)
     wandb.log({"lambda_max": lambda_max.item()}, commit=False)
 
     return lambda_max.to('cuda')
@@ -420,7 +410,7 @@ def cat_mask(t, mask1, mask2):
 
 
 class MDCSLoss(nn.Module):
-    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=True):
+    def __init__(self, cls_num_list=None, max_m=0.5, s=30, tau=2, use_cosine_loss=False, use_lambda_max=False):
         super().__init__()
         self.base_loss = F.cross_entropy
         self.cosine_loss = CosineDiversityLoss(weight=1.0)

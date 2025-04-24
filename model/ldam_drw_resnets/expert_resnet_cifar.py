@@ -96,7 +96,7 @@ class BasicBlock(nn.Module):
 
 class ResNet_s(nn.Module):
 
-    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=True, orthonormalise=False):
+    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=False, orthonormalise=False):
         super(ResNet_s, self).__init__()
         
         self.in_planes = 16
@@ -319,20 +319,17 @@ def project_to_unique_subspaces(
     base, rem = divmod(dim, K)      # e.g. for dim=100, K=6 → base=16, rem=4
     # first `rem` experts get (base+1) dims, the rest get base dims
     sizes = [(base + 1) if i < rem else base for i in range(K)]
-    print(f'sizes, {sizes}')
     starts = [0] + list(torch.cumsum(torch.tensor(sizes), 0).tolist())
 
     # build Cayley Q as before
     S = A - A.t()
     I = torch.eye(dim, device=A.device, dtype=A.dtype)
-    print(I.shape, S.shape)
     Q = torch.linalg.solve(I - S, I + S)  # (dim, dim)
 
     V = torch.zeros_like(U)
     for i in range(K):
         s, e = starts[i], starts[i+1]
         Bi = Q[:, s:e]           # shape (dim, sizes[i])
-        print(Bi.shape)
         ui = U[:, i]             # shape (batch, dim)
         coords = ui @ Bi         # → (batch, sizes[i])
         V[:, i] = coords @ Bi.t()# → (batch, dim)
