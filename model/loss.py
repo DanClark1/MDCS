@@ -36,8 +36,9 @@ def calculate_lambda_max_loss(x):
     eps = 1e-6
 
     start_time = time.time()
-    A = A.to('cpu')
+    A = A.to('cpu') # for some reason qr is super slow on gpu
     Q, R = torch.linalg.qr(A, mode="reduced")
+    R = R.to('cuda')
     Q = Q.to('cuda')
     end_time = time.time()
         
