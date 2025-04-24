@@ -30,7 +30,9 @@ def calculate_lambda_max_loss(x):
     Q = Q.to('cuda')
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
-    k      = (r_diag > eps).sum(dim=1)                    # (E,)
+    k      = (r_diag > eps).sum(dim=1)   
+    for i, ki in enumerate(k):
+        print(f"expert_{i}_empirical_rank", ki.item())
     cols   = torch.arange(Q.size(-1), device=Q.device)    # (d,)
     mask   = cols[None, None, :] < k[:, None, None]       # (E, 1, d)
     Qm     = Q * mask                                     
