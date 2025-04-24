@@ -344,6 +344,8 @@ def project_to_unique_subspaces(
         assert rank <= (dim // K + 1), (
             f"Expert {i}: empirical rank {rank} exceeds block size {dim //K}"
         )
+
+    calculate_lambda_max_loss(V, batch, num_experts=K)
     return V
 
 
@@ -388,20 +390,24 @@ def gram_schmidt_orthonormalise(U: torch.Tensor, eps: float = 1e-6) -> torch.Ten
 
 
 
-def calculate_lambda_max_loss(x):   
-    # (batch, K, dim)
-    x = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
-    A = x.permute(1, 2, 0).contiguous()  # (d, n, batch)
-
+def calculate_lambda_max_loss(x, batch_size, n_experts=3):   
+    ''' x is shape (K, batch_size, dim) '''
+    x = x.permute(0, 2, 1).contiguous() 
+    A = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
+    print(A.shape)
     eps = 1e-6
 
-    A = A.to('cpu') # for some reason qr is super slow on gpu
     Q, R = torch.linalg.qr(A, mode="reduced")
-    R = R.to('cuda')
-    Q = Q.to('cuda')
+
+
+
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
-    k      = (r_diag > eps).sum(dim=1)                    # (E,)
+    k      = (r_diag > eps).sum(dim=1)   
+    
+    for i, ki in enumerate(k):
+        print(A.shape)
+        print(f"expert_{i}_empirical_rank", ki.item())
     cols   = torch.arange(Q.size(-1), device=Q.device)    # (d,)
     mask   = cols[None, None, :] < k[:, None, None]       # (E, 1, d)
     Qm     = Q * mask                                     
@@ -410,4 +416,7 @@ def calculate_lambda_max_loss(x):
 
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
+    assert R.shape[0] == n_experts
+    assert R.shape[-1] == batch_size 
+
     return lambda_max.to('cuda')
