@@ -61,7 +61,7 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
     x = x.permute(0, 2, 1).contiguous() 
 
     print(x.shape)
-    eps = 1e-6
+    eps = 1e-3
 
     Q, R = torch.linalg.qr(x, mode="reduced")
 
