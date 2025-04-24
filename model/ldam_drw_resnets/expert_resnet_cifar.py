@@ -337,6 +337,7 @@ def project_to_unique_subspaces(
 
 
     for i in range(K):
+        print(V[:, i].shape)
         rank = torch.linalg.matrix_rank(V[:, i].unsqueeze(1), 1e-6)
         print(rank)
         assert rank <= K, f"rank of {i}th expert is {rank}"
