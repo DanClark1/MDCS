@@ -423,5 +423,5 @@ def calculate_lambda_max_loss(x, batch_size, n_experts=3):
     lambda_max = eigvals[-1]
     assert R.shape[0] == n_experts
     assert R.shape[-1] == batch_size 
-
+    print(lambda_max)
     return lambda_max.to('cuda')
