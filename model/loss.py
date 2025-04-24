@@ -17,6 +17,44 @@ def focal_loss(input_values, gamma):
 
 
 
+def covariance_matching_loss(expert_outputs: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """
+    Covariance‐matching loss for block‐projected MoE outputs.
+    Args:
+      expert_outputs: Tensor of shape (batch_size, K, dim),
+                      AFTER project_to_unique_subspaces has been applied.
+      eps:            Small constant for numerical stability in normalization.
+    Returns:
+      cov_loss:       A scalar Tensor = sum_i ||C_i - (1/d_i) I||_F^2
+    """
+    batch_size, K, dim = expert_outputs.shape
+
+    # 1) Figure out each block’s size and start‐end indices
+    base, rem = divmod(dim, K)
+    sizes  = [(base + 1) if i < rem else base for i in range(K)]
+    starts = [0] + torch.cumsum(torch.tensor(sizes, device=expert_outputs.device), 0).tolist()
+
+    cov_loss = 0.0
+    for i in range(K):
+        s, e = starts[i], starts[i+1]
+        d_i  = e - s
+
+        # 2) Extract the i-th block coords: shape (batch_size, d_i)
+        Vi = expert_outputs[:, i, s:e]
+
+        # 3) Row‐normalize so that (VᵀV)/batch is a proper correlation matrix
+        Vi = F.normalize(Vi, p=2, dim=1, eps=eps)
+
+        # 4) Empirical covariance C_i = (Viᵀ @ Vi) / batch_size
+        Ci = (Vi.transpose(0, 1) @ Vi) / batch_size  # shape (d_i, d_i)
+
+        # 5) Penalize deviation from (1/d_i) * I
+        target = torch.eye(d_i, device=Ci.device, dtype=Ci.dtype) / d_i
+        cov_loss = cov_loss + torch.norm(Ci - target, p='fro')**2
+
+    return cov_loss
+
+
 def calculate_lambda_max_loss(x):   
     # (batch, K, dim)
     x = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
@@ -511,6 +549,7 @@ class MDCSLoss(nn.Module):
         logits_list = extra_info['logits']
         cosine = self.cosine_loss(logits_list)
         lambda_max = calculate_lambda_max_loss(logits_list)
+        lambda_max += covariance_matching_loss(logits_list)
         if self.use_cosine_loss:
             loss += cosine
         if self.use_lambda_max:
