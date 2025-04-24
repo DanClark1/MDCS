@@ -212,6 +212,12 @@ class ResNet_s(nn.Module):
 
 
         if self.project:
+                    batch, K, dim = 256, 4, 100
+                    U = torch.randn(batch, K, dim, device="cuda")
+                    V = project_to_unique_subspaces(U, torch.randn(dim, dim, device="cuda"))
+                    λ = calculate_lambda_max_loss(V)
+                    print("λₘₐₓ on perfect orthogonal split:", λ.item())
+
                     projection_matrix = torch.randn(x.shape[0], 100, 100).to('cuda')
                     final_out = batch_project_to_unique_subspaces(
                         final_out,
@@ -366,3 +372,31 @@ def gram_schmidt_orthonormalise(U: torch.Tensor, eps: float = 1e-6) -> torch.Ten
 
     # stack back into (batch, K, dim)
     return torch.stack(orthonorms, dim=1)
+
+
+
+
+def calculate_lambda_max_loss(x):   
+    # (batch, K, dim)
+    x = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
+    A = x.permute(1, 2, 0).contiguous()  # (d, n, batch)
+
+    eps = 1e-6
+
+    A = A.to('cpu') # for some reason qr is super slow on gpu
+    Q, R = torch.linalg.qr(A, mode="reduced")
+    R = R.to('cuda')
+    Q = Q.to('cuda')
+        
+    r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
+    k      = (r_diag > eps).sum(dim=1)                    # (E,)
+    cols   = torch.arange(Q.size(-1), device=Q.device)    # (d,)
+    mask   = cols[None, None, :] < k[:, None, None]       # (E, 1, d)
+    Qm     = Q * mask                                     
+    projs  = Qm @ Qm.transpose(-2, -1) 
+    avg_proj    = projs.mean(dim=0) 
+
+    eigvals = torch.linalg.eigvalsh(avg_proj)
+    lambda_max = eigvals[-1]
+    wandb.log({"lambda_max": lambda_max.item()}, commit=False)
+    return lambda_max.to('cuda')
