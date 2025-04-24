@@ -55,7 +55,7 @@ def covariance_matching_loss(expert_outputs: torch.Tensor, eps: float = 1e-6) ->
     return cov_loss
 
 
-def calculate_lambda_max_loss(x):   
+def calculate_lambda_max_loss(x, batch_size, n_experts=3):   
     # x is shape (dim, batch, K)
     x = x.permute(0, 2, 1).contiguous() 
     A = F.normalize(x, p=2, dim=-1)  # now normalizes each dim-vector
@@ -69,7 +69,8 @@ def calculate_lambda_max_loss(x):
         
     r_diag = R.abs().diagonal(dim1=-2, dim2=-1)           # (E, min(d,B))
     k      = (r_diag > eps).sum(dim=1)   
-
+    assert R.shape[0] == n_experts
+    assert R.shape[-1] == batch_size 
     for i, ki in enumerate(k):
         print(A.shape)
         print(f"expert_{i}_empirical_rank", ki.item())
@@ -463,7 +464,7 @@ class MDCSLoss(nn.Module):
     def forward(self, output_logits, target, extra_info=None):
         if extra_info is None:
             return self.base_loss(output_logits, target)  # output_logits indicates the final prediction
-
+        batch_size = output_logits.shape[0]
         loss = 0
         temperature_mean = 1
         temperature = 1  
@@ -550,7 +551,7 @@ class MDCSLoss(nn.Module):
 
         logits_list = extra_info['logits']
         cosine = self.cosine_loss(logits_list)
-        lambda_max = calculate_lambda_max_loss(logits_list)
+        lambda_max = calculate_lambda_max_loss(logits_list, batch_size)
         if self.use_cosine_loss:
             loss += cosine
         if self.use_lambda_max:
