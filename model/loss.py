@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import pdb
+import wandb
 
 eps = 1e-7
 import torch.distributed as dist
@@ -178,7 +179,9 @@ def calculate_lambda_max_loss(x):
     if torch.isnan(x).any():
         raise ValueError(f"NaNs detected in clients_tensor before normalization.")
 
-    x = F.normalize(x, p=2, dim=-1).to('cpu')
+    clients = x               # (batch, K, dim)
+    clients = F.normalize(clients, p=2, dim=-1)  # now normalizes each dim-vector
+    clients_tensor = clients.permute(1, 2, 0)     # (K, dim, batch)
 
 
     if torch.isnan(x).any():
@@ -201,6 +204,7 @@ def calculate_lambda_max_loss(x):
 
     eigvals = torch.linalg.eigvalsh(avg_proj)
     lambda_max = eigvals[-1]
+    wandb.log({"lambda_max": lambda_max.item()}, commit=False)
     return lambda_max.to('cuda')
 
 class CosineDiversityLoss(nn.Module):
@@ -651,30 +655,29 @@ class MDCSLoss(nn.Module):
                                          teacher_expert3_softmax[(teacher3_index == partial_target)],
                                          reduction='batchmean') * (temperature ** 2)
 
-        #loss = loss + 0.6 * kl_loss * min(extra_info['epoch'] / self.warmup, 1.0)
+        loss = loss + 0.6 * kl_loss * min(extra_info['epoch'] / self.warmup, 1.0)
 
 
 
-        # # expert 1
-        # loss += self.base_loss(expert1_logits, target)
+        # expert 1
+        loss += self.base_loss(expert1_logits, target)
 
-        # # expert 2
-        # loss += self.base_loss(expert2_logits, target)
+        # expert 2
+        loss += self.base_loss(expert2_logits, target)
 
-        # # expert 3
-        # loss += self.base_loss(expert3_logits, target)
-
-
-        loss = self.base_loss(output_logits, target) 
+        # expert 3
+        loss += self.base_loss(expert3_logits, target)
 
 
+        #loss = self.base_loss(output_logits, target) 
+
+        logits_list = extra_info['logits']
+        cosine = self.cosine_loss(logits_list)
+        lambda_max = calculate_lambda_max_loss(logits_list)
         if self.use_cosine_loss:
-            logits_list = extra_info['logits']
-            loss += self.cosine_loss(logits_list)
+            loss += cosine
         if self.use_lambda_max:
-            logits_list = extra_info['logits']
-            lambda_max = calculate_lambda_max_loss(logits_list)
-            loss += lambda_max * 10.0
+            loss += lambda_max * 0.1
 
         return loss
 
