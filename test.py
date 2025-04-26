@@ -33,10 +33,10 @@ class MLP(nn.Module):
     def forward(self, input):
 
         return self.linear2(self.ac((self.linear1(input))))
-net = MLP(100,50,3).to("cuda")
-loss = nn.CrossEntropyLoss()
-sm = nn.Softmax(dim=-1)
-optimizer = optim.SGD(net.parameters(), lr=0.05)
+# net = MLP(100,50,3).to("cuda")
+# loss = nn.CrossEntropyLoss()
+# sm = nn.Softmax(dim=-1)
+# optimizer = optim.SGD(net.parameters(), lr=0.05)
 def main(config):
     logger = config.get_logger('test')
     # setup data_loader instances
