@@ -1,4 +1,4 @@
-torch==1.8.0
+torch>=1.8.0
 torchvision==0.9.0        # matches torch 1.8.0 :contentReference[oaicite:0]{index=0}
 numpy==1.19.5              # released Jan 5, 2021 :contentReference[oaicite:1]{index=1}
 matplotlib==3.3.2          # release date Sep 15, 2020 :contentReference[oaicite:2]{index=2}
