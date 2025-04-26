@@ -231,6 +231,7 @@ class ResNet_s(nn.Module):
             final_out = projected_final_out
         mean_final_out = final_out.mean(dim=1)
         
+        
 
         if self.returns_feat:
             return {
