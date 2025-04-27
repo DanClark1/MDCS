@@ -15,7 +15,7 @@ import wandb
 deterministic = True
 if deterministic:
     # fix random seeds for reproducibility
-    SEED = 123
+    SEED = 1234
     torch.manual_seed(SEED)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
