@@ -96,7 +96,7 @@ class BasicBlock(nn.Module):
 
 class ResNet_s(nn.Module):
 
-    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=False, orthonormalise=False):
+    def __init__(self, block, num_blocks, num_experts, num_classes=10, reduce_dimension=False, layer2_output_dim=None, layer3_output_dim=None, use_norm=False, returns_feat=True, use_experts=None, s=30, project=True, orthonormalise=False):
         super(ResNet_s, self).__init__()
         
         self.in_planes = 16
