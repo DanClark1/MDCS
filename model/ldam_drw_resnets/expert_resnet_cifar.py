@@ -126,7 +126,7 @@ class ResNet_s(nn.Module):
         self.in_planes = self.next_in_planes
         self.layer3s = nn.ModuleList([self._make_layer(block, layer3_output_dim, num_blocks[2], stride=2) for _ in range(num_experts)])
         self.in_planes = self.next_in_planes
-        #self.projection_matrix = None
+        self.projection_matrix = None
 
         if use_norm:
             self.linears = nn.ModuleList([NormedLinear(layer3_output_dim, num_classes) for _ in range(num_experts)])
